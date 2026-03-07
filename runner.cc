@@ -136,6 +136,8 @@ bool unloader (std::map<std::string,std::string> settings) {
 		delete applets[settings["ID"]]->window;
 	}
 	
+	// TODO: unload plugins if no instance is left
+	
 	applets.erase(settings["ID"]);
 	return true;
 }

@@ -73,4 +73,7 @@ std::time_t Applet::update () {
 	
 	// in case you dont need to update, return max
 	// return std::numeric_limits<std::time_t>::max();
+	
+	// if you need to run update more often than every second, return current time (this currently means every 35ms but can change in the future, use with care) 
+	// return std::time(nullptr);
 }

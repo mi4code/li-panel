@@ -15,7 +15,7 @@
 using namespace std::chrono_literals;
 std::map<std::string, Applet*(*)()> plugins;  // constructors
 std::map<std::string, Applet*> applets;  // applet instances
-std::set<std::pair<std::time_t, /*std::time_t(Applet::*)()*/Applet*>> updaters; // update functions
+std::vector<std::pair<std::time_t, /*std::time_t(Applet::*)()*/Applet*>> updaters; // update functions
 
 
 bool loader (std::map<std::string,std::string> settings) { 
@@ -50,7 +50,7 @@ bool loader (std::map<std::string,std::string> settings) {
 	
 	if (parent == "NULL") {
 		applet->window = nullptr;
-		applets[applet->settings["APPLET"]] = applet;
+		applets.emplace(applet->settings["ID"], std::move(applet));
 		return true;
 	}
 	else if (parent == "WINDOW") {
@@ -104,8 +104,7 @@ bool loader (std::map<std::string,std::string> settings) {
 	
 	// done, call load()
 	applet->load();
-	//applets.emplace(applet->settings["ID"], std::move(applet));
-	applets[applet->settings["ID"]] = applet;
+	applets.emplace(applet->settings["ID"], std::move(applet));
 	// TODO: return result of load
 	
 	return true;
@@ -270,7 +269,7 @@ int main () {
 	std::time_t t = std::time(nullptr);
 	
 	// TODO: handle updaters in loader/unloader
-	for (auto a : applets) updaters.emplace(t, a.second/*->update*/);
+	for (auto a : applets) updaters.push_back({t, a.second/*->update*/});
 	// TODO: add updater for cfg file changes
 	
 	while (1) {
@@ -283,18 +282,8 @@ int main () {
 		
 		// handle applets
 		t = std::time(nullptr);
-		//for (auto& u : updaters) if (u.first <= t) u.first = u.second->update();
-		for (auto u = updaters.begin(); u != updaters.end(); ) {
-			if (u->first <= t) {
-				updaters.emplace(u->second->update(), u->second); 
-				u = updaters.erase(u);
-			}
-			else {
-				break; // sorted
-			}
-		}
+		for (auto& u : updaters) if (u.first <= t) u.first = u.second->update();
 		
 	}
-	
 	
 }

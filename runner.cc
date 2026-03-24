@@ -263,6 +263,7 @@ void configure(std::vector<std::map<std::string,std::string>>& cfg){
 int main () {
 	
 	auto cfg = parser(HUI::filepath("li-panel.cfg").c_str());
+	if (!cfg.size()) cfg = parser(HUI::filepath("$HOME/.config/li-panel.cfg").c_str());
 	configure(cfg);
 	
 	std::time_t t = std::time(nullptr);

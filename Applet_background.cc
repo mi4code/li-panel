@@ -1,7 +1,6 @@
 #define PANEL_APPLET
 #include "./Applet.h"
 #include <limits>
-#include "./hui_datatypes.h"  // TODO: deprecated
 
 const std::map<std::string, void(*)(std::string)> Applet::commands () {
 	return {};

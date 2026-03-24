@@ -10,7 +10,6 @@
 #include <unistd.h>
 #include "./Applet.h"
 #include "HUI.hh"
-#include "./hui_datatypes.h"  // TODO: deprecated
 
 using namespace std::chrono_literals;
 std::map<std::string, Applet*(*)()> plugins;  // constructors

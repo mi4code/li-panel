@@ -18,7 +18,7 @@ void Applet::load() {
 		HUI::WindowControls windowctl(window->backend_object(), window->window_handle());
 		windowctl.set_type(WT_DESKTOP_COMPONENT);
 		windowctl.set_layer(WL_BACKGROUND);
-		windowctl.set_geometry({.state = 0, .monitor = std::stoi(settings["screen"]), .width = -1, .height = -1, .left = 0, .top = 0, .right = 0, .bottom = 0});
+		windowctl.set_geometry({.state = 0, .monitor = std::stoi(settings["display"]), .width = -1, .height = -1, .left = 0, .top = 0, .right = 0, .bottom = 0});
 		windowctl.set_exclusive_zone(-2); // make the background go under the panel
 	}
 }

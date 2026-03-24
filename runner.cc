@@ -22,7 +22,7 @@ bool loader (std::map<std::string,std::string> settings) {
 	// load plugin if not already loaded
 	if (!plugins.contains(settings["APPLET"])){
 		
-		std::string filename = "Applet_" + settings["APPLET"] + ".so" ;
+		std::string filename = std::string() + "/usr/lib/li_panel/" + "Applet_" + settings["APPLET"] + ".so" ; // TODO: use relative path
 		void* handle = dlopen(filename.c_str(), RTLD_LAZY);
 		if (!handle) return false;
 		

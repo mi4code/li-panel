@@ -1,5 +1,6 @@
 #include <dlfcn.h>
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <ctime>
@@ -10,6 +11,9 @@
 #include <unistd.h>
 #include "./Applet.h"
 #include "HUI.hh"
+#if defined(__linux__)
+ #include <sys/inotify.h>
+#endif
 
 using namespace std::chrono_literals;
 std::map<std::string, Applet*(*)()> plugins;  // constructors
@@ -102,6 +106,7 @@ bool loader (std::map<std::string,std::string> settings) {
 	
 	
 	// done, call load()
+	applet->settings["PLACEMENT"].pop_back();
 	applet->load();
 	applets.emplace(applet->settings["ID"], std::move(applet));
 	// TODO: return result of load
@@ -172,7 +177,7 @@ bool reloader (std::map<std::string,std::string> settings) {
 }
 
 
-std::vector<std::map<std::string,std::string>>parser (std::string filename) {
+std::vector<std::map<std::string,std::string>> parser (std::string filename) {
 	
 	// open file
 	std::ifstream file(filename);
@@ -260,17 +265,32 @@ void configure(std::vector<std::map<std::string,std::string>>& cfg){
 }
 
 
-int main () {
+int main (int argc, char* argv[]) {
 	
-	auto cfg = parser(HUI::filepath("li-panel.cfg").c_str());
-	if (!cfg.size()) cfg = parser(HUI::filepath("$HOME/.config/li-panel.cfg").c_str());
+	// load configuration
+	std::string cfg_file;
+	if (argc == 2) cfg_file = argv[1];
+	else {
+		for (auto f : {"$HOME/.config/li-panel/li-panel.cfg", "$HOME/.config/li-panel.cfg", "li-panel.cfg"}) {
+			cfg_file = HUI::filepath(f).c_str();
+			if (std::filesystem::exists(cfg_file)) break;
+		}
+	}
+	std::cerr << "load config: " << cfg_file << "\n";
+	auto cfg = parser(cfg_file);
 	configure(cfg);
 	
-	std::time_t t = std::time(nullptr);
-	
+	// assign updaters
 	// TODO: handle updaters in loader/unloader
+	std::time_t t = std::time(nullptr);
 	for (auto a : applets) updaters.push_back({t, a.second/*->update*/});
-	// TODO: add updater for cfg file changes
+	
+	// watch for cfg file changes
+	#if defined(__linux__)
+	int fd_inotify = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+	inotify_add_watch(fd_inotify, std::filesystem::path(cfg_file).parent_path().c_str(), IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO);
+	char buf_inotify[4096];
+	#endif
 	
 	while (1) {
 		
@@ -283,6 +303,16 @@ int main () {
 		// handle applets
 		t = std::time(nullptr);
 		for (auto& u : updaters) if (u.first <= t) u.first = u.second->update();
+		
+		// keep up with cfg file changes
+		#if defined(__linux__)
+		if (read(fd_inotify, buf_inotify, sizeof(buf_inotify)) > 0) {
+			std::cerr << "reload config: " << cfg_file << "\n";
+			auto cfg = parser(cfg_file);
+			configure(cfg);
+			while (read(fd_inotify, buf_inotify, sizeof(buf_inotify)) > 0);
+		}
+		#endif
 		
 	}
 	

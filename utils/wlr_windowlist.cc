@@ -15,6 +15,12 @@
 
 #define WLR_FOREIGN_TOPLEVEL_MANAGEMENT_VERSION 3
 
+#if defined(WINDOWLIST_TEST) 
+	#define printdbg(...) fprintf(stderr, __VA_ARGS__)
+#else
+	#define printdbg(...) 
+#endif
+
 std::string file_to_data_url(const std::filesystem::path& path) {
     // --- read file ---
     std::ifstream file(path, std::ios::binary);
@@ -76,7 +82,7 @@ std::string get_xdg_icon(const std::string& app_id, const std::string& icon_path
 
     if (glob(pattern.c_str(), GLOB_BRACE, nullptr, &g) == 0) {
         for (size_t i = 0; i < g.gl_pathc; ++i) {
-            std::cerr << g.gl_pathv[i] << "\n";
+			printdbg("WINDOW ICON: %s\n", g.gl_pathv[i]);
         }
     }
 	
@@ -130,12 +136,6 @@ class WindowList {
 	wl_display* display;
 	wl_registry* registry;
 };
-
-#if defined(WINDOWLIST_TEST) 
-	#define printdbg(...) fprintf(stderr, __VA_ARGS__)
-#else
-	#define printdbg(...) 
-#endif
 
 static const struct zwlr_foreign_toplevel_handle_v1_listener toplevel_impl = {
 	.title =  [](void* data, struct zwlr_foreign_toplevel_handle_v1* zwlr_toplevel, const char* title) -> void {

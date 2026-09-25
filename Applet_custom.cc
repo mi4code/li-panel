@@ -38,7 +38,7 @@ void Applet::load() {
 	}
 	
 	// custom events: onclick_l/r/m, onwheel_up/down/left/right
-	window->call_js("document.querySelector('#"+settings["ID"]+"').addEventListener('click',e=>{ document.querySelector('#"+settings["ID"]+"').dispatchEvent(new CustomEvent('click_'+['l','m','r'][e.button],{detail:e})); });");
+	window->call_js("['click','contextmenu'].forEach(f => document.querySelector('#"+settings["ID"]+"').addEventListener(f,e=>{ document.querySelector('#"+settings["ID"]+"').dispatchEvent(new CustomEvent('click_'+['l','m','r'][e.button],{detail:e})); }));");
 	window->call_js("document.querySelector('#"+settings["ID"]+"').addEventListener('wheel',e=>{ var d = e.deltaY!=0 ? (e.deltaY<0?'up':'down') : (e.deltaX<0?'left':'right'); document.querySelector('#"+settings["ID"]+"').dispatchEvent(new CustomEvent('wheel_'+d,{detail:e})); },{passive:false});");
 	
 }

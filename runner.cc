@@ -16,7 +16,7 @@
 #endif
 
 using namespace std::chrono_literals;
-std::map<std::string, Applet*(*)()> plugins;  // constructors
+std::map<std::string, std::pair<Applet*(*)(),void(*)(Applet*)>> plugins;  // constructors
 std::map<std::string, Applet*> applets;  // applet instances
 std::vector<std::pair<std::time_t, /*std::time_t(Applet::*)()*/Applet*>> updaters; // update functions
 
@@ -31,16 +31,16 @@ bool loader (std::map<std::string,std::string> settings) {
 		if (!handle) return false;
 		
 		auto create = (Applet*(*)()) dlsym(handle, "create_object");
-		//auto destroy = (void(*)(Applet*)) dlsym(handle, "destroy_object"); // TODO: clean deletion
+		auto destroy = (void(*)(Applet*)) dlsym(handle, "destroy_object");
 		if (!create) return false;
 	
-		plugins[settings["APPLET"]] = create;
+		plugins[settings["APPLET"]] = {create, destroy};
 	
 	}
 	
 
 	// create applet instance
-	auto applet = plugins[settings["APPLET"]]();
+	auto applet = plugins[settings["APPLET"]].first();
 	
 	applet->settings = applet->settings_default();
 	for (const auto& s : settings) applet->settings[s.first] = s.second;
@@ -140,7 +140,8 @@ bool unloader (std::map<std::string,std::string> settings) {
 	}
 	
 	// TODO: unload plugins if no instance is left
-	
+
+	plugins[applets[settings["ID"]]->settings["APPLET"]].second(applets[settings["ID"]]);
 	applets.erase(settings["ID"]);
 	return true;
 }
@@ -154,7 +155,9 @@ bool reloader (std::map<std::string,std::string> settings) {
 	if (!applets.contains(settings["ID"])) return loader(settings);
 
 	// create normalized new settings
-	std::map<std::string,std::string> settings_new = plugins[settings["APPLET"]]()->settings_default();
+	auto tmp_applet = plugins[settings["APPLET"]].first();
+	std::map<std::string,std::string> settings_new = tmp_applet->settings_default();
+	plugins[settings["APPLET"]].second(tmp_applet);
 	for (const auto& s : settings) settings_new[s.first] = s.second;
 
 	// in case no settings have changed, return

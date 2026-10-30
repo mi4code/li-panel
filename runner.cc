@@ -31,7 +31,10 @@ bool loader (std::map<std::string,std::string> settings) {
 		
 		auto create = (Applet*(*)()) dlsym(handle, "create_object");
 		auto destroy = (void(*)(Applet*)) dlsym(handle, "destroy_object");
-		if (!create) return false;
+		if (!create or !destroy) {
+			dlclose(handle);
+			return false;
+		}
 	
 		plugins[settings["APPLET"]] = {create, destroy};
 	
@@ -52,8 +55,6 @@ bool loader (std::map<std::string,std::string> settings) {
 	
 	if (parent == "NULL") {
 		applet->window = nullptr;
-		applets.emplace(applet->settings["ID"], std::move(applet));
-		return true;
 	}
 	else if (parent == "WINDOW") {
 		applet->window = new HUI::WebView();
@@ -92,35 +93,45 @@ bool loader (std::map<std::string,std::string> settings) {
 	else if (applets.contains(parent)) {
 		applet->window = applets[parent]->window;
 	}
-	else return false;
+	else {
+		plugins[settings["APPLET"]].second(applet);
+		return false;
+	}
 	
 	
-	// create div with id
-	applet->window->call_js(std::string() + "\
-		var template = document.createElement('template'); \
-		template.innerHTML = `<div class=\"applet\" id=\"" + applet->settings["ID"] + "\" style=\"" + applet->settings["PLACEMENT"].substr(applet->settings["PLACEMENT"].find(' ')) + "\"></div>`; \
-		document.querySelector('#" + parent + ".container, #" + parent + " .container').appendChild(template.content.firstChild); \
-		");
-	// TODO: check whether parent is container
-	
+	// create div with id (only if applet is placed)
+	if (applet->window) {
+		applet->window->call_js(std::string() + "\
+			var template = document.createElement('template'); \
+			template.innerHTML = `<div class=\"applet\" id=\"" + applet->settings["ID"] + "\" style=\"" + applet->settings["PLACEMENT"].substr(applet->settings["PLACEMENT"].find(' ')) + "\"></div>`; \
+			document.querySelector('#" + parent + ".container, #" + parent + " .container').appendChild(template.content.firstChild); \
+			");
+		// TODO: check whether parent is container
+	}
 	
 	// done, call load()
 	applet->settings["PLACEMENT"].pop_back();
 	applet->load();
 	applets.emplace(applet->settings["ID"], std::move(applet));
-	// TODO: return result of load
 	
 	return true;
 }
 
 bool unloader (std::map<std::string,std::string> settings) {
 	
+	// already nonexistent
+	if (!applets.contains(settings["ID"])) return false; 
+	
 	// unload content of container (if any) first
 	if (applets[settings["ID"]]->window != nullptr) {
+		std::set<std::string> to_unload;
 		for (auto& a : applets) {
 			if ((a.second->settings["PLACEMENT"]+" ").starts_with(settings["ID"]+" ")) {
-				unloader({{"ID",a.second->settings["ID"]}});
+				to_unload.insert(a.second->settings["ID"]);
 			}
+		}
+		for (auto& i : to_unload) {
+			unloader({{"ID",i}});
 		}
 	}
 	
@@ -134,7 +145,7 @@ bool unloader (std::map<std::string,std::string> settings) {
 	}
 	
 	// destroy window if it was created (for given applet)
-	if (applets[settings["ID"]]->settings["PLACEMENT"].starts_with("WINDOW")) {
+	if ((applets[settings["ID"]]->settings["PLACEMENT"]+" ").starts_with("WINDOW ")) {
 		delete applets[settings["ID"]]->window;
 	}
 	
@@ -154,7 +165,13 @@ bool reloader (std::map<std::string,std::string> settings) {
 	// plugin doesnt exist (so load it)
 	if (!applets.contains(settings["ID"])) return loader(settings);
 
-	// create normalized new settings
+	// applet type has changed (so unload+load)
+	if (applets[settings["ID"]]->settings["APPLET"] != settings["APPLET"]) {
+		unloader({{"ID",settings["ID"]}});
+		return loader(settings);
+	}
+
+	// create normalized new settings (should never be called if applet type is new)
 	auto tmp_applet = plugins[settings["APPLET"]].first();
 	std::map<std::string,std::string> settings_new = tmp_applet->settings_default();
 	plugins[settings["APPLET"]].second(tmp_applet);
@@ -163,9 +180,9 @@ bool reloader (std::map<std::string,std::string> settings) {
 	// in case no settings have changed, return
 	if (settings_new == applets[settings_new["ID"]]->settings) return true;
 
-	// applet type has changed or has changed location (so unload+load)
+	// applet location has changed (so unload+load)
 	// TODO: move within same window with multiple containers
-	if (applets[settings_new["ID"]]->settings["APPLET"] != settings_new["APPLET"] or applets[settings_new["ID"]]->settings["PLACEMENT"] != settings_new["PLACEMENT"]) {
+	if (applets[settings_new["ID"]]->settings["PLACEMENT"] != settings_new["PLACEMENT"]) {
 		unloader({{"ID",settings_new["ID"]}});
 		return loader(settings_new);
 	}

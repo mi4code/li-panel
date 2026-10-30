@@ -33,7 +33,7 @@ void Applet::load() {
 	for (auto s : settings) {
 		if (s.first.starts_with("on")){
 			std::string cmd = s.second;
-			window->call_js( std::string() + "document.querySelector('#" + settings["ID"] + "').addEventListener('" + s.first.substr(2) + "'," + window->call_native([this, cmd](std::vector<std::string> args) -> void { system((cmd+" &").c_str()); update(); }) + ");");
+			window->call_js( std::string() + "document.querySelector('#" + settings["ID"] + "').addEventListener('" + s.first.substr(2) + "'," + window->call_native([this, cmd](std::vector<std::string> args) -> void { system((cmd+" &").c_str()); next_update = std::time(nullptr); }) + ");");
 		}
 	}
 	

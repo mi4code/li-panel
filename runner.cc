@@ -16,7 +16,7 @@
 #endif
 
 using namespace std::chrono_literals;
-std::map<std::string, std::pair<Applet*(*)(),void(*)(Applet*)>> plugins;  // constructors
+std::map<std::string, std::pair<Applet*(*)(),void(*)(Applet*)>> plugins;  // applet constructors and destructors
 std::map<std::string, Applet*> applets;  // applet instances
 
 
@@ -138,10 +138,11 @@ bool unloader (std::map<std::string,std::string> settings) {
 		delete applets[settings["ID"]]->window;
 	}
 	
-	// TODO: unload plugins if no instance is left
-
+	// destroy applet and remove it from applet list
 	plugins[applets[settings["ID"]]->settings["APPLET"]].second(applets[settings["ID"]]);
 	applets.erase(settings["ID"]);
+	// TODO: unload plugins if no instance is left
+	
 	return true;
 }
 

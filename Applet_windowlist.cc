@@ -15,8 +15,7 @@ const std::map<std::string,std::string> Applet::settings_default () {
 
 void Applet::load() {
 	list.init();
-	window->html_element( "#"+settings["ID"], "innerHTML", "`<style>#"+settings["ID"]+"{display: flex;}  #"+settings["ID"]+" > div{color: white; margin: auto 3px; height: 100%; display: flex; align-items: center; background-size:50%; background-repeat:no-repeat; background-position:center; min-width:60px;}  #"+settings["ID"]+" > div:hover{color: red;}</style>`" );
-	// TODO: vertical-compatible layout (use same code as panel)
+	window->html_element( "#"+settings["ID"], "innerHTML", "`<style>#"+settings["ID"]+"{display: flex; flex-direction: inherit; gap: 3px;}  #"+settings["ID"]+" > div{color: white; display: flex; align-items: center; background-size: 50%; background-repeat: no-repeat; background-position: center; aspect-ratio: 1;}  #"+settings["ID"]+" > div:hover{color: red;} @container(aspect-ratio > 1){#"+settings["ID"]+" > div{height: 100%;}} @container(aspect-ratio < 1){#"+settings["ID"]+" > div{width: 100%;}}</style>`" );
 	
 	window->call_js("\
 		['click', 'dragenter'].forEach(n => document.querySelector('#"+settings["ID"]+"').addEventListener(n, function(e) {\

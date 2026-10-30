@@ -49,6 +49,10 @@ void Applet::load () {
 	// add text into the applet area
 	window->call_js(std::string() + "document.querySelector('#" + settings["ID"] + "').innerHTML = `" + R"(
 <style>
+	*:has(> #)" + settings["ID"] + R"() {
+	  container-type: size;
+	}
+
 	#)" + settings["ID"] + R"( {
 	  display: flex;
 	  
@@ -91,7 +95,6 @@ void Applet::load () {
 	}
 </style>
 	)" + "`;");
-	// TODO: fix vertical panel (flex-direction not applied)
 	
 	// hint that this is applet area 
 	window->call_js(std::string() + "document.querySelector('#" + settings["ID"] + "').classList.add('container');");

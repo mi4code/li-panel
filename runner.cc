@@ -18,7 +18,6 @@
 using namespace std::chrono_literals;
 std::map<std::string, std::pair<Applet*(*)(),void(*)(Applet*)>> plugins;  // constructors
 std::map<std::string, Applet*> applets;  // applet instances
-std::vector<std::pair<std::time_t, /*std::time_t(Applet::*)()*/Applet*>> updaters; // update functions
 
 
 bool loader (std::map<std::string,std::string> settings) { 
@@ -283,11 +282,6 @@ int main (int argc, char* argv[]) {
 	auto cfg = parser(cfg_file);
 	configure(cfg);
 	
-	// assign updaters
-	// TODO: handle updaters in loader/unloader
-	std::time_t t = std::time(nullptr);
-	for (auto a : applets) updaters.push_back({t, a.second/*->update*/});
-	
 	// watch for cfg file changes
 	#if defined(__linux__)
 	int fd_inotify = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
@@ -304,8 +298,8 @@ int main (int argc, char* argv[]) {
 		std::this_thread::sleep_for(35ms);
 		
 		// handle applets
-		t = std::time(nullptr);
-		for (auto& u : updaters) if (u.first <= t) u.first = u.second->update();
+		std::time_t t = std::time(nullptr);
+		for (auto& a : applets) if (a.second->next_update <= t) a.second->next_update = a.second->update();
 		
 		// keep up with cfg file changes
 		#if defined(__linux__)

@@ -14,6 +14,7 @@ class Applet {
 	
 	HUI::WebView* window = nullptr;
 	std::map<std::string,std::string> settings;
+	std::time_t next_update = 0;
 	
 	virtual const std::map<std::string, void(*)(std::string)> commands ();
 	virtual const std::map<std::string,std::string> settings_default ();

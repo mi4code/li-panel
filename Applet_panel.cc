@@ -10,7 +10,7 @@ const std::map<std::string, void(*)(std::string)> Applet::commands () {
 }
 
 const std::map<std::string,std::string> Applet::settings_default () {
-	return {};
+	return {{"focus_mode","window"}};
 }
 
 
@@ -37,8 +37,19 @@ void Applet::load () {
 			.right = std::stoi(gm[3]), 
 			.bottom = std::stoi(gm[4])
 			});
-		windowctl.set_input_mode_keyboard(WIM_AUTO_WINDOW);
+		if (settings["focus_mode"] == "never") windowctl.set_input_mode_keyboard(WIM_NEVER);
+		else if (settings["focus_mode"] == "always") windowctl.set_input_mode_keyboard(WIM_NEVER);
+		else windowctl.set_input_mode_keyboard(WIM_AUTO_WINDOW);
 		windowctl.set_exclusive_zone(-2);
+		
+		if (settings["focus_mode"] == "inputs") {
+			// force unfocus panel window if clicked (with exception for inputs)
+			window->call_js(std::string() + "document.addEventListener('pointerdown', e => { if (!e.target.closest('input,textarea,select,[contenteditable]')) (" + window->call_native([this](std::vector<std::string>){
+				if (settings["focus_mode"] != "inputs") return; // TODO: this eventlistener stays after config update but it shouldnt
+				HUI::WindowControls(window->backend_object(), window->window_handle()).set_input_mode_keyboard(WIM_NEVER);
+				next_update = std::time(nullptr)+1;
+			}) + ")(); }, true);");
+		}
 		
 	}
 	else {
@@ -111,6 +122,9 @@ void Applet::unload () {
 
 
 std::time_t Applet::update () {
+	// restore keyboard mode after force unfocus
+	if (settings["focus_mode"] == "inputs") HUI::WindowControls(window->backend_object(), window->window_handle()).set_input_mode_keyboard(WIM_AUTO_WINDOW);
+	
 	// never updated
 	return std::numeric_limits<std::time_t>::max();
 }

@@ -7,42 +7,37 @@ li-panel is core of desktop environment that can run under any compositor (being
 ## Usage
 
 The whole li-panel is based on number of plugins and plugin runner (which only runs the plugins with their configs).
-To configure the li-panel, update the `li-panel.cfg` file (should be in the same directory as the binary).
+To configure the li-panel, update the `~/.config/li-panel/li-panel.cfg` file.
 The format should be as following:
 ```
-<plugin name>{
+[<plugin name>]
 ID: <unique ID>
-PLACEMENT: <container ID | WINDOW | NULL> <optional CSS>
-option: value
-}
+PLACEMENT = <container ID> | WINDOW | NULL <optional CSS>
+option = value
 
-<plugin name>{
+[<plugin name>]
 ...
-}
 
 ```
 Example:
 ```
-panel{
-ID: panel0
-PLACEMENT: WINDOW -1 0 0 0 -1 60
-}
+[panel]
+ID = panel0
+PLACEMENT = WINDOW -1 0 0 0 -1 60
+focus_mode = inputs
 
-run{
-ID: run0
-PLACEMENT: panel0
-}
+[run]
+ID = run0
+PLACEMENT = panel0
 
-windowlist{
-ID: wl0
-PLACEMENT: panel0 flex-grow:9999;
-}
+[windowlist]
+ID = wl0
+PLACEMENT = panel0 flex-grow:9999;
 
-datetime{
-ID: datetime0
-PLACEMENT: panel0 width:120px;
-format: %H:%M
-}
+[datetime]
+ID = datetime0
+PLACEMENT = panel0 width:120px;
+format = %H:%M
 
 ```
 

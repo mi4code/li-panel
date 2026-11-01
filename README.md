@@ -2,7 +2,7 @@
 
 li-panel is core of desktop environment that can run under any compositor (being it Wayland or x11 - currently the support is limited) and takes care of all desktop widgets like backgrounds, panels, ~~notifications, volume/brightness popups,~~ etc. 
 
-<!-- TODO: screenshot -->
+![](SCREENSHOT.png)
 
 ## Usage
 

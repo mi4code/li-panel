@@ -39,7 +39,7 @@ void Applet::load() {
 	
 	// custom events: onclick_l/r/m, onwheel_up/down/left/right
 	window->call_js("['click','contextmenu'].forEach(f => document.querySelector('#"+settings["ID"]+"').addEventListener(f,e=>{ document.querySelector('#"+settings["ID"]+"').dispatchEvent(new CustomEvent('click_'+['l','m','r'][e.button],{detail:e})); }));");
-	window->call_js("['touchstart','touchmove','touchend','touchcancel'].forEach(t => document.addEventListener(t, e => window.__t = e.touches.length > 0, {capture:true, passive:true}));");
+	window->call_js("document.addEventListener('pointermove', e => window.__t = e.pointerType == 'touch');");
 	window->call_js("document.querySelector('#"+settings["ID"]+"').addEventListener('wheel',e=>{ var i = window.__t ? -1:1; var d = e.deltaY!=0 ? (e.deltaY*i<0?'up':'down') : (e.deltaX*i<0?'left':'right'); document.querySelector('#"+settings["ID"]+"').dispatchEvent(new CustomEvent('wheel_'+d,{detail:e})); },{passive:false});");
 	// TODO: touch wheel is WebKitGTK-specific - handle this better
 }
